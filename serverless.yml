@@ -13,7 +13,39 @@
 
 service: my-service
 plugins:
+ - serverless-dynamodb-local
  - serverless-offline
+custom:
+  dynamodb:
+    start:
+      port: 8001
+      inMemory: true
+      migrate: true
+      seed: true
+    seed:
+      development:
+        sources:
+          - table: jankens
+            sources: [./migrations/jankens.json]
+resources:
+  Resources:
+    JankensTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: jankens
+        AttributeDefinitions:
+          - AttributeName: player
+            AttributeType: S
+          - AttributeName: unixtime
+            AttributeType: N
+        KeySchema:
+          - AttributeName: player
+            KeyType: HASH
+          - AttributeName: unixtime
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
@@ -63,6 +95,12 @@ functions:
         - http:
             path: hello
             method: get
+  playJanken:
+    handler: handler.playJanken
+    events:
+      - http:
+          path: jankens
+          method: post
 
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
