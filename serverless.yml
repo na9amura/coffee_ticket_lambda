@@ -13,33 +13,33 @@
 
 service: my-service
 plugins:
- - serverless-dynamodb-local
- - serverless-offline
+  - serverless-dynamodb-local
+  - serverless-offline
 custom:
   dynamodb:
     start:
       port: 8001
       inMemory: true
       migrate: true
-      seed: true
-    seed:
-      development:
-        sources:
-          - table: jankens
-            sources: [./migrations/jankens.json]
+    #   seed: true
+    # seed:
+    #   development:
+    #     sources:
+    #       - table: orders
+    #         sources: [./migrations/orders.json]
 resources:
   Resources:
     JankensTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: jankens
+        TableName: orders
         AttributeDefinitions:
-          - AttributeName: player
+          - AttributeName: user
             AttributeType: S
           - AttributeName: unixtime
             AttributeType: N
         KeySchema:
-          - AttributeName: player
+          - AttributeName: user
             KeyType: HASH
           - AttributeName: unixtime
             KeyType: RANGE
@@ -90,16 +90,16 @@ provider:
 
 functions:
   hello:
-    handler: handler.hello
+    handler: index.hello
     events:
         - http:
             path: hello
             method: get
-  playJanken:
-    handler: handler.playJanken
+  order:
+    handler: handler.order
     events:
       - http:
-          path: jankens
+          path: order
           method: post
 
 #    The following are a few example events you can configure
