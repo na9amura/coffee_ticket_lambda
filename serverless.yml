@@ -89,14 +89,8 @@ provider:
 #    - exclude-me-dir/**
 
 functions:
-  hello:
-    handler: index.hello
-    events:
-        - http:
-            path: hello
-            method: get
   order:
-    handler: handler.order
+    handler: order.run
     events:
       - http:
           path: order

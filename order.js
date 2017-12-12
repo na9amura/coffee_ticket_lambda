@@ -13,7 +13,7 @@ var getDynamoClient = (event) => {
   return new AWS.DynamoDB.DocumentClient(options);
 }
 
- module.exports.order = (event, context, callback) => {
+ module.exports.run = (event, context, callback) => {
     console.log(`received event: ${ JSON.stringify(event, null, 2) }`);
     console.log(`received context: ${ JSON.stringify(context, null, 2) }`);
 
