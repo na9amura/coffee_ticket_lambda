@@ -1,6 +1,7 @@
 "use strict"
 
 var AWS = require("aws-sdk");
+var qs = require('querystring');
 
 var getDynamoClient = (event) => {
   var options = {};
@@ -14,25 +15,26 @@ var getDynamoClient = (event) => {
 }
 
  module.exports.run = (event, context, callback) => {
-    console.log(`received event: ${ JSON.stringify(event, null, 2) }`);
-    console.log(`received context: ${ JSON.stringify(context, null, 2) }`);
-
     var ddb = getDynamoClient(event);
+
     var date = new Date();
+    var year = date.getFullYear();
     var month = date.getMonth() + 1;
     var unixtime = Math.floor(date.getTime() / 1000);
-    var user = event.queryStringParameters.name;
+    var params = qs.parse(event.body);
 
-    var params = {
+    var data = {
       TableName: 'orders',
       Item: {
-        user: user,
-        month: month,
+        user: params.user_id,
         unixtime: unixtime,
+        year: year,
+        month: month,
+        name: params.user_name,
       },
     };
 
-    ddb.put(params, (error) => {
+    ddb.put(data, (error) => {
       var response = { statusCode: null, body: null };
       if (error) {
         console.log(error);
