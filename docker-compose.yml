@@ -6,5 +6,5 @@ services:
       - .:/var/task
       - ~/.aws:/root/.aws
     ports:
-      - 3000:3000
+      - 3001:3001
       - 8001:8001

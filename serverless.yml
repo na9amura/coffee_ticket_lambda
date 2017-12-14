@@ -27,6 +27,9 @@ custom:
     #     sources:
     #       - table: orders
     #         sources: [./migrations/orders.json]
+  serverless-offline:
+    host: 0.0.0.0
+    port: 3001
 resources:
   Resources:
     JankensTable:

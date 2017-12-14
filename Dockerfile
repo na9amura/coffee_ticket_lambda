@@ -31,4 +31,5 @@ RUN \
 RUN apk -v --purge del py-pip && \
   rm /var/cache/apk/*
 
+EXPOSE 3001 8001
 # RUN serverless dynamodb install
