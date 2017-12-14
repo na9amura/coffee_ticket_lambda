@@ -1,23 +1,11 @@
 "use strict"
 
-var AWS = require("aws-sdk");
-
-var getDynamoClient = (event) => {
-  var options = {};
-  if ("isOffline" in event && event.isOffline) {
-    options = ({
-      region: "localhost",
-      endpoint: "http://localhost:8001",
-    });
-  }
-  return new AWS.DynamoDB.DocumentClient(options);
-}
-
  module.exports.run = (event, context, callback) => {
     console.log(`received event: ${ JSON.stringify(event, null, 2) }`);
     console.log(`received context: ${ JSON.stringify(context, null, 2) }`);
 
-    var ddb = getDynamoClient(event);
+    var options = require("./dynamodb_client").getOptions(event);
+    var ddb = new AWS.DynamoDB.DocumentClient(options);
     var date = new Date();
     var month = date.getMonth() + 1;
     var unixtime = Math.floor(date.getTime() / 1000);
