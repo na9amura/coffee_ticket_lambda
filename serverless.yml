@@ -59,16 +59,16 @@ provider:
   runtime: nodejs6.10
 
 # you can overwrite defaults here
-#  stage: dev
-#  region: us-east-1
+  stage: dev
+  region: ap-northeast-1
 
 # you can add statements to the Lambda function's IAM Role here
-iamRoleStatements:
-  - Effect: "Allow"
-    Action:
-      - 'dynamodb:PutItem'
-      - 'dynamodb:Scan'
-    Resource: "*"
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - 'dynamodb:PutItem'
+        - 'dynamodb:Scan'
+      Resource: "*"
 
 # you can define service wide environment variables here
 #  environment:
