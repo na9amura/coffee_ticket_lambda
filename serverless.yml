@@ -35,17 +35,31 @@ resources:
     JankensTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: orders
+        TableName: Orders
         AttributeDefinitions:
-          - AttributeName: user
+          - AttributeName: User
             AttributeType: S
-          - AttributeName: unixtime
+          - AttributeName: Unixtime
+            AttributeType: N
+          - AttributeName: YearMonth
             AttributeType: N
         KeySchema:
-          - AttributeName: user
+          - AttributeName: User
             KeyType: HASH
-          - AttributeName: unixtime
+          - AttributeName: Unixtime
             KeyType: RANGE
+        GlobalSecondaryIndexes:
+          -
+            IndexName: YearMonthIndex
+            KeySchema:
+              -
+                AttributeName: YearMonth
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
@@ -85,6 +99,12 @@ functions:
     events:
       - http:
           path: order
+          method: post
+  summary:
+    handler: summary.run
+    events:
+      - http:
+          path: summary
           method: post
 
 #    The following are a few example events you can configure
