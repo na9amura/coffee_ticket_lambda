@@ -2,7 +2,6 @@
 
 var AWS = require("aws-sdk");
 var qs = require('querystring');
-
 var getDynamoClient = (event) => {
   var options = {};
   if ("isOffline" in event && event.isOffline) {
@@ -14,35 +13,48 @@ var getDynamoClient = (event) => {
   return new AWS.DynamoDB.DocumentClient(options);
 }
 
- module.exports.run = (event, context, callback) => {
-    var ddb = getDynamoClient(event);
+var buildParams = (event, body) => {
+  var date = new Date();
+  var year = date.getFullYear();
+  var month = date.getMonth() + 1;
+  var unixtime = Math.floor(date.getTime() / 1000);
 
-    var date = new Date();
-    var year = date.getFullYear();
-    var month = date.getMonth() + 1;
-    var unixtime = Math.floor(date.getTime() / 1000);
-    var params = qs.parse(event.body);
+  return {
+    TableName: 'Orders',
+    Item: {
+      User: body.user_id,
+      Unixtime: unixtime,
+      YearMonth: parseInt(`${year}${month}`),
+      Name: body.user_name,
+    },
+  };
+}
 
-    var data = {
-      TableName: 'Orders',
-      Item: {
-        User: params.user_id,
-        Unixtime: unixtime,
-        YearMonth: parseInt(`${year}${month}`),
-        Name: params.user_name,
-      },
-    };
+var processEvent = (event, callback) => {
+  const ddb = getDynamoClient(event);
+  const body = qs.parse(event.body);
+  const params = buildParams(event, body);
+  ddb.put(params, (error, data) => {
+    if (error) {
+      console.log(error);
+      callback({
+        response_type: "in_channel",
+        text: "失敗しました…",
+      })
+    } else {
+      callback(null, {
+        response_type: "in_channel",
+        text: "コーヒーどうぞ",
+      })
+    }
+  });
+}
 
-    ddb.put(data, (error) => {
-      var response = { statusCode: null, body: null };
-      if (error) {
-        console.log(error);
-        response.statusCode = 500;
-        response.body = { code: 500, message: 'failed to put' }
-      } else {
-        response.statusCode = 200;
-        response.body = JSON.stringify(data.Item)
-      }
-      callback(null, response)
+module.exports.run = (event, context, callback) => {
+    const done = (err, res) => callback(null, {
+      statusCode: err ? '400' : '200',
+      body: err ? (err.message || err) : JSON.stringify(res),
+      headers: { 'Content-Type': 'application/json' },
     });
- };
+    processEvent(event, done)
+};
