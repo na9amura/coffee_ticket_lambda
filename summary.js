@@ -14,6 +14,21 @@ var getDynamoClient = (event) => {
   return new AWS.DynamoDB.DocumentClient(options);
 }
 
+var countByUser = (items) => {
+  var count = {};
+  items.forEach((e) => { 
+    var name = e['Name']
+    var user_count = count[name] || 0
+    count[name] = user_count + 1
+  });
+  return Object.keys(count).map((key) => {
+    return {
+      title: key,
+      value: count[key] ,
+    }
+  })
+}
+
  module.exports.run = (event, context, callback) => {
     var ddb = getDynamoClient(event);
     var params = qs.parse(event.body);
@@ -28,14 +43,25 @@ var getDynamoClient = (event) => {
     };
 
     ddb.query(query, (error, data) => {
-      var response = {};
+      var response = {
+        statusCode: '200',
+        body: {},
+        headers: { 'Content-Type': 'application/json' },
+      }
       if (error) {
         console.log(error);
-        response.statusCode = 500;
-        response.body = { code: 500, message: 'failed to query' }
+        response.body = {
+          response_type: "in_channel",
+          text: "失敗しました…",
+        }
       } else {
-        response.statusCode = 200;
-        response.body = JSON.stringify(data.Items)
+        response.body = {
+          response_type: "in_channel",
+          text: "集計しました",
+          attachment: [{
+            fields: countByUser(data.Items),
+          }]
+        }
       }
       callback(null, response)
     })
