@@ -21,12 +21,6 @@ custom:
       port: 8001
       inMemory: true
       migrate: true
-    #   seed: true
-    # seed:
-    #   development:
-    #     sources:
-    #       - table: orders
-    #         sources: [./migrations/orders.json]
   serverless-offline:
     host: 0.0.0.0
     port: 3001
@@ -92,6 +86,9 @@ provider:
 package:
  exclude:
    - .work/**
+   - docker-compose.yml
+   - Dockerfile
+   - '*_sample.json'
 
 functions:
   order:
