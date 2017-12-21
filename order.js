@@ -53,7 +53,7 @@ var processEvent = (event, callback) => {
 module.exports.run = (event, context, callback) => {
     const done = (err, res) => callback(null, {
       statusCode: err ? '400' : '200',
-      body: err ? (err.message || err) : JSON.stringify(res),
+      body: err ? (err.message || JSON.stringify(err)) : JSON.stringify(res),
       headers: { 'Content-Type': 'application/json' },
     });
     processEvent(event, done)

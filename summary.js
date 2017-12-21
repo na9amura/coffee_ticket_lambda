@@ -29,15 +29,27 @@ var countByUser = (items) => {
   })
 }
 
+var currentYearMonth = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  return parseInt(`${year}${month}`)
+}
+
 var processEvent = (event, callback) => {
   const ddb = getDynamoClient(event);
   const body = qs.parse(event.body);
+  const yearMonth = parseInt(body.text) || currentYearMonth()
+  if (! (1 < (yearMonth / 100000) < 10)) {
+    callback({ text: 'メッセージの先頭に\'yyyyMM\'の形式で日付を指定してください' })
+    return
+  }
 
   const query = {
     TableName: 'Orders',
     IndexName: 'YearMonthIndex',
     ExpressionAttributeValues: {
-      ':ym': 201712,
+      ':ym': yearMonth,
     },
     KeyConditionExpression: 'YearMonth = :ym',
   };
@@ -49,10 +61,15 @@ var processEvent = (event, callback) => {
         response_type: "in_channel",
         text: "失敗しました…",
       })
+    } else if (data.Items.length === 0) {
+      callback(null, {
+        response_type: "in_channel",
+        text: `${ yearMonth }の利用はありません`,
+      })
     } else {
       callback(null, {
         response_type: "in_channel",
-        text: "集計しました",
+        text: `${ yearMonth }の集計です`,
         attachment: [{
           fields: countByUser(data.Items),
         }]
@@ -64,7 +81,7 @@ var processEvent = (event, callback) => {
  module.exports.run = (event, context, callback) => {
     const done = (err, res) => callback(null, {
       statusCode: err ? '400' : '200',
-      body: err ? (err.message || err) : JSON.stringify(res),
+      body: err ? (err.message || JSON.stringify(err)) : JSON.stringify(res),
       headers: { 'Content-Type': 'application/json' },
     });
     processEvent(event, done)
