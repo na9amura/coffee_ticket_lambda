@@ -36,46 +36,61 @@ var currentYearMonth = () => {
   return parseInt(`${year}${month}`)
 }
 
+var queryParams = (text) => {
+  return new Promise((resolve, reject) => {
+    const yearMonth = parseInt(text) || currentYearMonth()
+    if (! (1 < (yearMonth / 100000) < 10)) {
+      reject('メッセージの先頭に\'yyyyMM\'の形式で日付を指定してください')
+      return
+    }
+
+    const params = {
+      TableName: 'Orders',
+      IndexName: 'YearMonthIndex',
+      ExpressionAttributeValues: {
+        ':ym': yearMonth,
+      },
+      KeyConditionExpression: 'YearMonth = :ym',
+    };
+    resolve({ yearMonth: yearMonth, params: params })
+  })
+}
+
 var processEvent = (event, callback) => {
   const ddb = getDynamoClient(event);
   const body = qs.parse(event.body);
-  const yearMonth = parseInt(body.text) || currentYearMonth()
-  if (! (1 < (yearMonth / 100000) < 10)) {
-    callback({ text: 'メッセージの先頭に\'yyyyMM\'の形式で日付を指定してください' })
-    return
-  }
 
-  const query = {
-    TableName: 'Orders',
-    IndexName: 'YearMonthIndex',
-    ExpressionAttributeValues: {
-      ':ym': yearMonth,
-    },
-    KeyConditionExpression: 'YearMonth = :ym',
-  };
-
-  ddb.query(query, (error, data) => {
-    if (error) {
-      console.log(error);
+  queryParams(body.text)
+    .then((result) => {
+      ddb.query(result.params, (error, data) => {
+        if (error) {
+          console.log(error);
+          callback({
+            response_type: "in_channel",
+            text: "失敗しました…",
+          })
+        } else if (data.Items.length === 0) {
+          callback(null, {
+            response_type: "in_channel",
+            text: `${ result.yearMonth }の利用はありません`,
+          })
+        } else {
+          callback(null, {
+            response_type: "in_channel",
+            text: `${ result.yearMonth }の集計です`,
+            attachment: [{
+              fields: countByUser(data.Items),
+            }]
+          })
+        }
+      })
+    })
+    .catch((message) => {
       callback({
         response_type: "in_channel",
-        text: "失敗しました…",
+        text: message,
       })
-    } else if (data.Items.length === 0) {
-      callback(null, {
-        response_type: "in_channel",
-        text: `${ yearMonth }の利用はありません`,
-      })
-    } else {
-      callback(null, {
-        response_type: "in_channel",
-        text: `${ yearMonth }の集計です`,
-        attachment: [{
-          fields: countByUser(data.Items),
-        }]
-      })
-    }
-  });
+    });
 }
 
  module.exports.run = (event, context, callback) => {
