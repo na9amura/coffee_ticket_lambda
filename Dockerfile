@@ -22,9 +22,9 @@ RUN pip3 install --upgrade \
  awscli
 
 RUN \
-  npm install -g serverless && \
-  npm install aws-sdk && \
-  npm install --save-dev \
+  yarn global add serverless && \
+  yarn add aws-sdk && \
+  yarn add --dev \
     serverless-offline \
     serverless-dynamodb-local
 

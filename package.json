@@ -1,0 +1,15 @@
+{
+  "name": "coffee_ticket_lambda",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:tacamula/coffee_ticket_lambda.git",
+  "author": "Nakamura Takahiro <takahiro.nakamura@gi-no.jp>",
+  "license": "MIT",
+  "dependencies": {
+    "aws-sdk": "^2.175.0",
+    "serverless-dynamodb-local": "^0.2.26"
+  },
+  "devDependencies": {
+    "serverless-offline": "^3.16.0"
+  }
+}
