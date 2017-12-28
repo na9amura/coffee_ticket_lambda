@@ -2,22 +2,26 @@
 
 var AWS = require("aws-sdk");
 var qs = require('querystring');
-var getDynamoClient = (event) => {
-  var options = {};
+
+const buildDynamoClientOptions = (event) => {
   if ("isOffline" in event && event.isOffline) {
-    options = ({
+    return {
       region: "localhost",
       endpoint: "http://localhost:8001",
-    });
+    }
   }
-  return new AWS.DynamoDB.DocumentClient(options);
+  return {}
 }
 
-var buildParams = (event, body) => {
-  var date = new Date();
-  var year = date.getFullYear();
-  var month = date.getMonth() + 1;
-  var unixtime = Math.floor(date.getTime() / 1000);
+const getDynamoClient = (event) => {
+  return new AWS.DynamoDB.DocumentClient(buildDynamoClientOptions(event));
+}
+
+const buildParams = (event, body) => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const unixtime = Math.floor(date.getTime() / 1000);
 
   return {
     TableName: 'Orders',
@@ -27,34 +31,49 @@ var buildParams = (event, body) => {
       YearMonth: parseInt(`${year}${month}`),
       Name: body.user_name,
     },
-  };
+  }
 }
 
-var processEvent = (event, callback) => {
-  const ddb = getDynamoClient(event);
+const putRecord = (args) => {
+  return new Promise((resolve, reject) => {
+    args.ddb.put(args.params, (error, data) => {
+      if (error) {
+        console.log(error);
+        reject("失敗しました…")
+      } else {
+        console.log(data);
+
+        resolve({
+          response_type: "in_channel",
+          text: `コーヒーどうぞ。注文番号: \`${ args.params.Item.Unixtime }\``,
+        })
+      }
+    })
+  })
+}
+
+const processEvent = (event) => {
   const body = qs.parse(event.body);
-  const params = buildParams(event, body);
-  ddb.put(params, (error, data) => {
-    if (error) {
-      console.log(error);
-      callback({
-        response_type: "in_channel",
-        text: "失敗しました…",
-      })
-    } else {
-      callback(null, {
-        response_type: "in_channel",
-        text: "コーヒーどうぞ",
-      })
-    }
-  });
+
+  return Promise.all([buildParams(event, body), getDynamoClient(event)])
+    .then((result) => { return { params: result[0], ddb: result[1] } })
+    .then(putRecord)
 }
 
 module.exports.run = (event, context, callback) => {
-    const done = (err, res) => callback(null, {
-      statusCode: err ? '400' : '200',
-      body: err ? (err.message || JSON.stringify(err)) : JSON.stringify(res),
-      headers: { 'Content-Type': 'application/json' },
-    });
-    processEvent(event, done)
+  processEvent(event)
+    .then((result) => {
+      callback(null, {
+        statusCode: '200',
+        body: JSON.stringify(result),
+        headers: { 'Content-Type': 'application/json' },
+      })
+    })
+    .catch((error) => {
+      callback(null, {
+        statusCode: '400',
+        body: error.message || JSON.stringify(error),
+        headers: { 'Content-Type': 'application/json' },
+      })
+    })
 };
