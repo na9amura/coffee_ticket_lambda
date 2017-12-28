@@ -1,7 +1,7 @@
 "use strict"
 
-var AWS = require("aws-sdk");
-var qs = require('querystring');
+const AWS = require("aws-sdk");
+const qs = require('querystring');
 
 const buildDynamoClientOptions = (event) => {
   if ("isOffline" in event && event.isOffline) {

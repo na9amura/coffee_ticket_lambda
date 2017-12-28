@@ -1,24 +1,27 @@
 "use strict"
 
-var AWS = require("aws-sdk");
-var qs = require('querystring');
+const AWS = require("aws-sdk");
+const qs = require('querystring');
 
-var getDynamoClient = (event) => {
-  var options = {};
+const buildDynamoClientOptions = (event) => {
   if ("isOffline" in event && event.isOffline) {
-    options = ({
+    return {
       region: "localhost",
       endpoint: "http://localhost:8001",
-    });
+    }
   }
-  return new AWS.DynamoDB.DocumentClient(options);
+  return {}
 }
 
-var countByUser = (items) => {
-  var count = {};
+const getDynamoClient = (event) => {
+  return new AWS.DynamoDB.DocumentClient(buildDynamoClientOptions(event));
+}
+
+const countByUser = (items) => {
+  const count = {};
   items.forEach((e) => {
-    var name = e['Name']
-    var user_count = count[name] || 0
+    const name = e['Name']
+    const user_count = count[name] || 0
     count[name] = user_count + 1
   });
   return Object.keys(count).map((key) => {
@@ -29,14 +32,14 @@ var countByUser = (items) => {
   })
 }
 
-var currentYearMonth = () => {
+const currentYearMonth = () => {
   const date = new Date();
   const year = date.getFullYear();
   const month = date.getMonth() + 1;
   return parseInt(`${year}${month}`)
 }
 
-var decideDateToSummarize = (text) => {
+const decideDateToSummarize = (text) => {
   return new Promise((resolve, reject) => {
     const yearMonth = parseInt(text) || currentYearMonth()
     if (! (1 < (yearMonth / 100000) < 10)) {
@@ -46,7 +49,7 @@ var decideDateToSummarize = (text) => {
   })
 }
 
-var buildParams = (yearMonth) => {
+const buildParams = (yearMonth) => {
   return {
     yearMonth: yearMonth,
     params: {
@@ -60,7 +63,7 @@ var buildParams = (yearMonth) => {
   }
 }
 
-var query = (event, data) => {
+const query = (event, data) => {
   return new Promise((resolve, reject) => {
     const ddb = getDynamoClient(event);
     ddb.query(data.params, (error, result) => {
@@ -85,7 +88,7 @@ var query = (event, data) => {
   })
 }
 
-var processEvent = (event) => {
+const processEvent = (event) => {
   const body = qs.parse(event.body);
 
   return decideDateToSummarize(body.text)
@@ -94,19 +97,19 @@ var processEvent = (event) => {
 }
 
  module.exports.run = (event, context, callback) => {
-    processEvent(event)
-      .then((result) => {
-        callback(null, {
-          statusCode: '200',
-          body: JSON.stringify(result),
-          headers: { 'Content-Type': 'application/json' },
-        })
+  processEvent(event)
+    .then((result) => {
+      callback(null, {
+        statusCode: '200',
+        body: JSON.stringify(result),
+        headers: { 'Content-Type': 'application/json' },
       })
-      .catch((error) => {
-        callback(null, {
-          statusCode: '400',
-          body: error.message || JSON.stringify(error),
-          headers: { 'Content-Type': 'application/json' },
-        })
+    })
+    .catch((error) => {
+      callback(null, {
+        statusCode: '400',
+        body: error.message || JSON.stringify(error),
+        headers: { 'Content-Type': 'application/json' },
       })
+    })
  };
