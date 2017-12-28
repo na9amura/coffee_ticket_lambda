@@ -68,12 +68,15 @@ var query = (event, data) => {
         console.log(error);
         reject("失敗しました…")
       } else if (result.Items.length === 0) {
-        reject(`${ data.yearMonth }の利用はありません`)
+        resolve({
+          response_type: "in_channel",
+          text: `${ data.yearMonth }の利用はありません`,
+        })
       } else {
         resolve({
           response_type: "in_channel",
           text: `${ data.yearMonth }の集計です`,
-          attachment: [{
+          attachments: [{
             fields: countByUser(result.Items),
           }]
         })
